@@ -1,0 +1,7 @@
+.PHONY: all clean
+
+all:
+	$(MAKE) -f GNUmakefile CC=gcc EXTRA_CFLAGS="-mcrtdll=msvcr120 -flto" EXTRA_LDFLAGS=-static EXTRA_LIBS=-lbcrypt SUFFIX=exe
+
+clean:
+	$(MAKE) -f GNUmakefile clean

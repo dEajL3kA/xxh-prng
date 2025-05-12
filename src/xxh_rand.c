@@ -26,16 +26,15 @@
  */
 
 #include "xxh64.h"
-#include "entropy.h"
+#include "os_support.h"
 
 #include <stdio.h>
 #include <string.h>
-#include <io.h>
-#include <fcntl.h>
-#include <intrin.h>
+#include <errno.h>
 
-#ifdef _MSC_VER
-#pragma intrinsic(_ReadWriteBarrier)
+#ifdef _WIN32
+#  include <fcntl.h>
+#  include <io.h>
 #endif
 
 static const unsigned int VERSION_MAJOR = 1U;
@@ -44,10 +43,10 @@ static const unsigned int VERSION_MINOR = 0U;
 #define STATE_WORDS 8U
 #define STATE_BYTES ((size_t)(sizeof(uint64_t) * STATE_WORDS))
 
-#define BUFF_MULTP 8U
-#define BUFF_WORDS (BUFF_MULTP * STATE_WORDS)
+#define BUFFR_MULTP 8U
+#define BUFFR_WORDS (BUFFR_MULTP * STATE_WORDS)
 
-#define MAX_CHUNKSIZE ((size_t)(sizeof(uint64_t) * (BUFF_MULTP - 1U) * STATE_WORDS))
+#define MAX_CHUNKSIZE ((size_t)(sizeof(uint64_t) * (BUFFR_MULTP - 1U) * STATE_WORDS))
 
 static int parse_uint64(const char *const str, uint64_t *const value)
 {
@@ -60,21 +59,25 @@ static int parse_uint64(const char *const str, uint64_t *const value)
     return 1;
 }
 
-static void clear_memory(void *const buffer, const size_t length)
+static int fwrite_hexchars(const uint8_t *const buffer, const size_t length, FILE *const stream)
 {
-    volatile const unsigned char ZERO_VALUE = 0U;
-    volatile unsigned char *const vptr = (volatile unsigned char*)buffer;
-    size_t offset;
-    for (offset = 0U; offset < length; ++offset) {
-        vptr[offset] = ZERO_VALUE;
+    static const char* const HEX_CHARS = "0123456789ABCDEF";
+    size_t pos, shift;
+    for (pos = 0U; pos < length; ++pos) {
+        for (shift = 0U; shift <= 4U; shift += 4U) {
+            if (FPUTC(HEX_CHARS[(buffer[pos] >> shift) & 0xF], stream) == EOF) {
+                return 0;
+            }
+        }
     }
+    return 1;
 }
 
 int main(int argc, char *argv[])
 {
-    int index = 1, no_buffer = 0, show_help = 0, show_version = 0, is_seeded = 0;
+    int index = 1, hex_output = 0, no_buffer = 0, show_help = 0, is_seeded = 0;
     size_t chunk_size, pos;
-    uint64_t remaining = UINT64_MAX, rand_buffer[BUFF_WORDS], state[STATE_WORDS] = { 0U };
+    uint64_t remaining = UINT64_MAX, rand_buffer[BUFFR_WORDS], state[STATE_WORDS] = { 0U };
 
     while (index < argc) {
         if ((argv[index][0] == '-') && (argv[index][1] == '-')) {
@@ -82,14 +85,17 @@ int main(int argc, char *argv[])
             if (!(*arg)) {
                 break; /*no more options*/
             }
-            else if (_stricmp(arg, "no-buffer") == 0) {
+            else if (STRICMP(arg, "hexstr") == 0) {
+                hex_output = 1;
+            }
+            else if (STRICMP(arg, "no-buffer") == 0) {
                 no_buffer = 1;
             }
-            else if (_stricmp(arg, "help") == 0) {
+            else if (STRICMP(arg, "version") == 0) {
                 show_help = 1;
             }
-            else if (_stricmp(arg, "version") == 0) {
-                show_version = 1;
+            else if (STRICMP(arg, "help") == 0) {
+                show_help = 2;
             }
             else {
                 fprintf(stderr, "Error: Unknown option! (\"--%s\")\n", arg);
@@ -101,12 +107,13 @@ int main(int argc, char *argv[])
         }
     }
 
-    if ((show_help || show_version)) {
+    if (show_help) {
         printf("XXH64-based pseudo-random number generator v%u.%u [" __DATE__ "]\n", VERSION_MAJOR, VERSION_MINOR);
-        if (show_help) {
+        if (show_help > 1) {
             puts("\nSynopsis:");
             puts("   xxh_rand.exe [OPTIONS] [SEED] [OUTPUT_SIZE]\n");
             puts("Options:");
+            puts("   --hexstr     Output as hexadecimal string. Default is \"raw\" bytes.");
             puts("   --no-buffer  Disable output buffering. Can be very slow!");
             puts("   --help       Print help screen and exit.");
             puts("   --version    Print version information and exit.\n");
@@ -116,9 +123,11 @@ int main(int argc, char *argv[])
         return EXIT_SUCCESS;
     }
 
+#ifdef _WIN32
     if (_setmode(_fileno(stdout), O_BINARY) == (-1)) {
         abort();
     }
+#endif
 
     if (no_buffer) {
         if (setvbuf(stdout, NULL, _IONBF, 0U) != 0) {
@@ -127,7 +136,7 @@ int main(int argc, char *argv[])
     }
 
     if (index < argc) {
-        if ((*argv[index]) && (_stricmp(argv[index], "-") != 0)) {
+        if ((*argv[index]) && (STRICMP(argv[index], "-") != 0)) {
             if (!parse_uint64(argv[index], &state[0U])) {
                 fprintf(stderr, "Error: Invalid seed value! (\"%s\")\n", argv[index]);
                 return EXIT_FAILURE;
@@ -141,13 +150,14 @@ int main(int argc, char *argv[])
     }
  
     if (!is_seeded) {
-        if (!get_entropy(state, STATE_BYTES)) {
-            abort();
+        if (!read_entropy((uint8_t*)state, STATE_BYTES)) {
+            fputs("Error: Failed to acquire seed from the system entropy source!\n", stderr);
+            return EXIT_FAILURE;
         }
     }
- 
+
     if (index < argc) {
-        if ((*argv[index]) && (_stricmp(argv[index], "-") != 0)) {
+        if ((*argv[index]) && (STRICMP(argv[index], "-") != 0)) {
             if (!parse_uint64(argv[index], &remaining)) {
                 fprintf(stderr, "Error: Invalid output size value! (\"%s\")\n", argv[index]);
                 return EXIT_FAILURE;
@@ -161,18 +171,30 @@ int main(int argc, char *argv[])
     }
 
     while (remaining) {
-        /* fprintf(stderr, "%016llX %016llX %016llX %016llX %016llX %016llX %016llX %016llX\n",
-            state[0U], state[1U], state[2U], state[3U], state[4U], state[5U], state[6U], state[7U]); */
+#ifdef _DEBUG
+        fprintf(stderr, "%016llX %016llX %016llX %016llX %016llX %016llX %016llX %016llX\n", state[0U], state[1U], state[2U], state[3U], state[4U], state[5U], state[6U], state[7U]);
+#endif
 
-        for (pos = 0U; pos < BUFF_WORDS; ++pos) {
+        for (pos = 0U; pos < BUFFR_WORDS; ++pos) {
             rand_buffer[pos] = XXH64(state, STATE_BYTES, pos);
         }
 
-        memcpy(state, rand_buffer, STATE_BYTES);
-        _ReadWriteBarrier();
+        for (pos = 0U; pos < STATE_WORDS; ++pos) {
+            state[pos] ^= rand_buffer[pos];
+        }
 
-        if (_fwrite_nolock(rand_buffer + STATE_WORDS, chunk_size = (remaining >= MAX_CHUNKSIZE) ? MAX_CHUNKSIZE : ((size_t)remaining), 1U, stdout) != 1U) {
-            break;
+        zero_memory((uint8_t*)rand_buffer, STATE_BYTES);
+
+        chunk_size = (remaining >= MAX_CHUNKSIZE) ? MAX_CHUNKSIZE : ((size_t)remaining);
+
+        if (!hex_output) {
+            if (FWRITE(rand_buffer + STATE_WORDS, chunk_size, 1U, stdout) != 1U) {
+                break;
+            }
+        } else {
+            if (!fwrite_hexchars((const uint8_t*)(rand_buffer + STATE_WORDS), chunk_size, stdout)) {
+                break;
+            }
         }
 
         if (remaining != UINT64_MAX) {
@@ -180,8 +202,8 @@ int main(int argc, char *argv[])
         }
     }
 
-    clear_memory(rand_buffer, sizeof(rand_buffer));
-    clear_memory(state, sizeof(state));
+    zero_memory((uint8_t*)rand_buffer, sizeof(rand_buffer));
+    zero_memory((uint8_t*)state, sizeof(state));
 
     return EXIT_SUCCESS;
 }

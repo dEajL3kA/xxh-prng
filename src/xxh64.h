@@ -44,11 +44,11 @@
 #define XXH64_H
 
 #if defined(__cplusplus)
-#include <cstdlib>
-#include <cstdint>
+#  include <cstdlib>
+#  include <cstdint>
 #else
-#include <stdlib.h>
-#include <stdint.h>
+#  include <stdlib.h>
+#  include <stdint.h>
 #endif
 
 #if defined(__cplusplus)

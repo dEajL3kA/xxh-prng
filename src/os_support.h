@@ -25,21 +25,43 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#define WIN32_LEAN_AND_MEAN 1
-#include <Windows.h>
-#include <bcrypt.h>
+#ifndef OS_SUPPORT_H
+#define OS_SUPPORT_H
 
-int get_entropy(void *const buffer, const size_t length)
-{
-    BCRYPT_ALG_HANDLE handle = NULL;
-    int success = 0;
+#if defined(__cplusplus)
+#  include <cstdlib>
+#  include <cstdint>
+#else
+#  include <stdlib.h>
+#  include <stdint.h>
+#endif
 
-    if (BCRYPT_SUCCESS(BCryptOpenAlgorithmProvider(&handle, BCRYPT_RNG_ALGORITHM, NULL, 0U))) {
-        if (BCRYPT_SUCCESS(BCryptGenRandom(handle, (PUCHAR)buffer, (ULONG)length, 0U))) {
-            success = 1;
-        }
-        BCryptCloseAlgorithmProvider(handle, 0U);
-    }
+#if defined(_WIN32)
+#  define FWRITE _fwrite_nolock
+#  define FPUTC _fputc_nolock
+#elif defined(__linux__) || defined(__FreeBSD__) || defined(__HAIKU__)
+#  define FWRITE fwrite_unlocked
+#  define FPUTC fputc_unlocked
+#else
+#  define FWRITE fwrite
+#  define FPUTC fputc
+#endif
 
-    return success;
+#ifdef _WIN32
+#  define STRICMP _stricmp
+#else
+#  define STRICMP strcasecmp
+#endif
+
+#if defined(__cplusplus)
+extern "C" {
+#endif
+
+int read_entropy(uint8_t *const buffer, const size_t length);
+void zero_memory(uint8_t* const buffer, const size_t length);
+
+#if defined(__cplusplus)
 }
+#endif
+
+#endif /*OS_SUPPORT_H*/

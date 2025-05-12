@@ -21,7 +21,7 @@
     <ClCompile Include="src\xxh_rand.c">
       <Filter>Quelldateien</Filter>
     </ClCompile>
-    <ClCompile Include="src\entropy.c">
+    <ClCompile Include="src\os_support.c">
       <Filter>Quelldateien</Filter>
     </ClCompile>
   </ItemGroup>
@@ -29,7 +29,7 @@
     <ClInclude Include="src\xxh64.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
-    <ClInclude Include="src\entropy.h">
+    <ClInclude Include="src\os_support.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
   </ItemGroup>

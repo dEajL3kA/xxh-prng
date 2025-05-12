@@ -25,23 +25,55 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef ENTROPY_H
-#define ENTROPY_H
+#include "os_support.h"
 
-#if defined(__cplusplus)
-#include <cstdlib>
+#ifdef _WIN32
+#  define WIN32_LEAN_AND_MEAN 1
+#  include <Windows.h>
+#  include <bcrypt.h>
 #else
-#include <stdlib.h>
+#  include <unistd.h>
+#  include <string.h>
+#  include <strings.h>
+#  include <errno.h>
 #endif
 
-#if defined(__cplusplus)
-extern "C" {
+#if defined(__APPLE__) && defined(__MACH__)
+#  include <sys/random.h>
 #endif
 
-int get_entropy(void *const buffer, const size_t length);
-
-#if defined(__cplusplus)
+int read_entropy(uint8_t *const buffer, const size_t length)
+{
+#ifdef _WIN32
+    BCRYPT_ALG_HANDLE handle = NULL;
+    int succeeded = 0;
+    if (BCRYPT_SUCCESS(BCryptOpenAlgorithmProvider(&handle, BCRYPT_RNG_ALGORITHM, NULL, 0U))) {
+        if (BCRYPT_SUCCESS(BCryptGenRandom(handle, (PUCHAR)buffer, (ULONG)length, 0U))) {
+            succeeded = 1;
+        }
+        BCryptCloseAlgorithmProvider(handle, 0U);
+    }
+    return succeeded;
+#else
+    return (getentropy(buffer, length) == 0);
+#endif
 }
-#endif
 
-#endif /* ENTROPY_H*/
+void zero_memory(uint8_t* const buffer, const size_t length)
+{
+#if defined(_WIN32)
+    RtlSecureZeroMemory(buffer, length);
+#elif defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || (defined(__sun) && defined(__SVR4)) || defined(__HAIKU__)
+    explicit_bzero(buffer, length);
+#elif defined(__NetBSD__)
+    explicit_memset(buffer, 0, length);
+#elif (defined(__APPLE__) && defined(__MACH__))
+    memset_s(buffer, RSIZE_MAX, 0, length);
+#else
+    volatile uint8_t *const vptr = (volatile uint8_t*) buffer;
+    size_t pos;
+    for (pos = 0U; pos < length; ++pos) {
+        vptr[pos] = 0U;
+    }
+#endif
+}
