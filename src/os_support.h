@@ -1,4 +1,6 @@
 /*
+ * XXH64-based pseudo-random number generator
+ *
  * BSD 2-Clause License (https://www.opensource.org/licenses/bsd-license.php)
  *
  * Redistribution and use in source and binary forms, with or without
@@ -39,7 +41,7 @@
 #if defined(_WIN32)
 #  define FWRITE _fwrite_nolock
 #  define FPUTC _fputc_nolock
-#elif defined(__linux__) || defined(__FreeBSD__) || defined(__HAIKU__)
+#elif defined(__linux__) || defined(__CYGWIN__) || defined(__FreeBSD__) || defined(__HAIKU__)
 #  define FWRITE fwrite_unlocked
 #  define FPUTC fputc_unlocked
 #else

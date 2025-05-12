@@ -18,7 +18,7 @@
     <ClCompile Include="src\xxh64.c">
       <Filter>Quelldateien</Filter>
     </ClCompile>
-    <ClCompile Include="src\xxh_rand.c">
+    <ClCompile Include="src\main.c">
       <Filter>Quelldateien</Filter>
     </ClCompile>
     <ClCompile Include="src\os_support.c">

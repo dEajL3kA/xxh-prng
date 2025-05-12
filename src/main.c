@@ -1,4 +1,6 @@
 /*
+ * XXH64-based pseudo-random number generator
+ *
  * BSD 2-Clause License (https://www.opensource.org/licenses/bsd-license.php)
  *
  * Redistribution and use in source and binary forms, with or without
@@ -59,16 +61,18 @@ static int parse_uint64(const char *const str, uint64_t *const value)
     return 1;
 }
 
+#define _FWRITE_HEXCHAR(SHIFT) \
+    if (FPUTC(HEX_CHARS[(buffer[pos] >> SHIFT) & 0xF], stream) == EOF) { \
+        return 0; \
+    }
+
 static int fwrite_hexchars(const uint8_t *const buffer, const size_t length, FILE *const stream)
 {
     static const char* const HEX_CHARS = "0123456789ABCDEF";
-    size_t pos, shift;
+    size_t pos;
     for (pos = 0U; pos < length; ++pos) {
-        for (shift = 0U; shift <= 4U; shift += 4U) {
-            if (FPUTC(HEX_CHARS[(buffer[pos] >> shift) & 0xF], stream) == EOF) {
-                return 0;
-            }
-        }
+        _FWRITE_HEXCHAR(0)
+        _FWRITE_HEXCHAR(4)
     }
     return 1;
 }
@@ -80,12 +84,16 @@ int main(int argc, char *argv[])
     uint64_t remaining = UINT64_MAX, rand_buffer[BUFFR_WORDS], state[STATE_WORDS] = { 0U };
 
     while (index < argc) {
-        if ((argv[index][0] == '-') && (argv[index][1] == '-')) {
+        if (((argv[index][0] == '/') || (argv[index][0] == '-')) && (argv[index][1] == '?')) {
+            ++index;
+            show_help = 2;
+        }
+        else if ((argv[index][0] == '-') && (argv[index][1] == '-')) {
             const char *const arg = argv[index++] + 2U;
             if (!(*arg)) {
                 break; /*no more options*/
             }
-            else if (STRICMP(arg, "hexstr") == 0) {
+            else if (STRICMP(arg, "hex") == 0) {
                 hex_output = 1;
             }
             else if (STRICMP(arg, "no-buffer") == 0) {
@@ -111,12 +119,12 @@ int main(int argc, char *argv[])
         printf("XXH64-based pseudo-random number generator v%u.%u [" __DATE__ "]\n", VERSION_MAJOR, VERSION_MINOR);
         if (show_help > 1) {
             puts("\nSynopsis:");
-            puts("   xxh_rand.exe [OPTIONS] [SEED] [OUTPUT_SIZE]\n");
+            puts("  xxh_rand.exe [OPTIONS] [SEED] [OUTPUT_SIZE]\n");
             puts("Options:");
-            puts("   --hexstr     Output as hexadecimal string. Default is \"raw\" bytes.");
-            puts("   --no-buffer  Disable output buffering. Can be very slow!");
-            puts("   --help       Print help screen and exit.");
-            puts("   --version    Print version information and exit.\n");
+            puts("  --hex        Output as hexadecimal string. Default is \"raw\" bytes.");
+            puts("  --no-buffer  Disable output buffering. Can be very slow!");
+            puts("  --help       Print help screen and exit.");
+            puts("  --version    Print version information and exit.\n");
             puts("If SEED is *not* specified (or set to \"-\"), uses a random seed from the OS' entropy source.");
             puts("If OUTPUT_SIZE is *not* specified, generates an indefinite amount of random bytes.");
         }

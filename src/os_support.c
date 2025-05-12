@@ -1,4 +1,6 @@
 /*
+ * XXH64-based pseudo-random number generator
+ *
  * BSD 2-Clause License (https://www.opensource.org/licenses/bsd-license.php)
  *
  * Redistribution and use in source and binary forms, with or without
@@ -55,7 +57,7 @@ int read_entropy(uint8_t *const buffer, const size_t length)
     }
     return succeeded;
 #else
-    return (getentropy(buffer, length) == 0);
+    return (getentropy(buffer, length) == 0); /* supported on pretty much all Unixes */
 #endif
 }
 
@@ -63,13 +65,14 @@ void zero_memory(uint8_t* const buffer, const size_t length)
 {
 #if defined(_WIN32)
     RtlSecureZeroMemory(buffer, length);
-#elif defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || (defined(__sun) && defined(__SVR4)) || defined(__HAIKU__)
+#elif defined(__linux__) || defined(__CYGWIN__) || defined(__FreeBSD__) || defined(__OpenBSD__) || (defined(__sun) && defined(__SVR4)) || defined(__gnu_hurd__) || defined(__HAIKU__)
     explicit_bzero(buffer, length);
 #elif defined(__NetBSD__)
     explicit_memset(buffer, 0, length);
 #elif (defined(__APPLE__) && defined(__MACH__))
     memset_s(buffer, RSIZE_MAX, 0, length);
 #else
+#pragma message("explicit_bzero() or equivalent is not supported on this platform, using fallback implementation!")
     volatile uint8_t *const vptr = (volatile uint8_t*) buffer;
     size_t pos;
     for (pos = 0U; pos < length; ++pos) {

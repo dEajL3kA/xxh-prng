@@ -1,7 +1,0 @@
-.PHONY: all clean
-
-all:
-	$(MAKE) -f GNUmakefile CC=musl-gcc EXTRA_CFLAGS="-flto" EXTRA_LDFLAGS="-static"
-
-clean:
-	$(MAKE) -f GNUmakefile clean

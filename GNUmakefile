@@ -1,7 +1,6 @@
 CFLAGS ?= -Wall -O3 -DNDEBUG
-
+STRIP ?= strip
 OUTFILE := bin/xxh_rand
-SRCFILE := $(wildcard src/*.c)
 
 # --------------------------------------------------------------
 # Build options
@@ -9,10 +8,6 @@ SRCFILE := $(wildcard src/*.c)
 
 ifneq ($(EXTRA_CFLAGS),)
   CFLAGS += $(EXTRA_CFLAGS)
-endif
-
-ifneq ($(EXTRA_LDFLAGS),)
-  LDFLAGS += $(EXTRA_LDFLAGS)
 endif
 
 ifneq ($(EXTRA_LIBS),)
@@ -27,16 +22,14 @@ endif
 # Targets
 # --------------------------------------------------------------
 
-.PHONY: all bin clean
+.PHONY: all clean
 
-all: clean bin
+all: clean $(OUTFILE)
 
-bin: $(OUTFILE)
-
-$(OUTFILE): $(SRCFILE)
-	test -d bin || mkdir bin
-	$(CC) $(CFLAGS) -o $@ $(LDFLAGS) $^ $(LDLIBS)
-	strip $@
+$(OUTFILE): $(wildcard src/*.c)
+	mkdir -p bin
+	$(CC) $(CFLAGS) -o $@ $^ $(LDLIBS)
+	$(STRIP) $@
 
 clean:
 	rm -rf $(dir $(OUTFILE))

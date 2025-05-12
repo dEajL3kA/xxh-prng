@@ -1,7 +1,0 @@
-.PHONY: all clean
-
-all:
-	$(MAKE) -f GNUmakefile EXTRA_CFLAGS="-flto" EXTRA_LDFLAGS="-static" EXTRA_LIBS=-lbsd
-
-clean:
-	$(MAKE) -f GNUmakefile clean
