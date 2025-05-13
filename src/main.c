@@ -50,6 +50,10 @@ static const unsigned int VERSION_MINOR = 0U;
 
 #define MAX_CHUNKSIZE ((size_t)(sizeof(uint64_t) * (BUFFR_MULTP - 1U) * STATE_WORDS))
 
+/* ======================================================================== */
+/* Utility functions                                                        */
+/* ======================================================================== */
+
 static int parse_uint64(const char *const str, uint64_t *const value)
 {
     char *endptr = NULL;
@@ -77,6 +81,36 @@ static int fwrite_hexchars(const uint8_t *const buffer, const size_t length, FIL
     return 1;
 }
 
+/* ======================================================================== */
+/* Help screen                                                              */
+/* ======================================================================== */
+
+#ifdef _WIN32
+#  define EXE_FILENAME "xxh_rand.exe"
+#else
+#  define EXE_FILENAME "xxh_rand"
+#endif
+
+static void print_helpscreen(const int full_help)
+{
+    printf("XXH64-based pseudo-random number generator v%u.%u [" __DATE__ "]\n", VERSION_MAJOR, VERSION_MINOR);
+    if (full_help) {
+        puts("\nSynopsis:");
+        puts("  " EXE_FILENAME " [OPTIONS] [SEED] [OUTPUT_SIZE]\n");
+        puts("Options:");
+        puts("  --hex        Output as hexadecimal string. Default is \"raw\" bytes.");
+        puts("  --no-buffer  Disable output buffering. Can be very slow!");
+        puts("  --help       Print help screen and exit.");
+        puts("  --version    Print version information and exit.\n");
+        puts("If SEED is *not* specified (or set to \"-\"), uses a random seed from the OS' entropy source.");
+        puts("If OUTPUT_SIZE is *not* specified, generates an indefinite amount of random bytes.");
+    }
+}
+
+/* ======================================================================== */
+/* MAIN                                                                     */
+/* ======================================================================== */
+
 int main(int argc, char *argv[])
 {
     int index = 1, hex_output = 0, no_buffer = 0, show_help = 0, is_seeded = 0;
@@ -100,7 +134,9 @@ int main(int argc, char *argv[])
                 no_buffer = 1;
             }
             else if (STRICMP(arg, "version") == 0) {
-                show_help = 1;
+                if (!show_help) {
+                    show_help = 1;
+                }
             }
             else if (STRICMP(arg, "help") == 0) {
                 show_help = 2;
@@ -116,18 +152,7 @@ int main(int argc, char *argv[])
     }
 
     if (show_help) {
-        printf("XXH64-based pseudo-random number generator v%u.%u [" __DATE__ "]\n", VERSION_MAJOR, VERSION_MINOR);
-        if (show_help > 1) {
-            puts("\nSynopsis:");
-            puts("  xxh_rand.exe [OPTIONS] [SEED] [OUTPUT_SIZE]\n");
-            puts("Options:");
-            puts("  --hex        Output as hexadecimal string. Default is \"raw\" bytes.");
-            puts("  --no-buffer  Disable output buffering. Can be very slow!");
-            puts("  --help       Print help screen and exit.");
-            puts("  --version    Print version information and exit.\n");
-            puts("If SEED is *not* specified (or set to \"-\"), uses a random seed from the OS' entropy source.");
-            puts("If OUTPUT_SIZE is *not* specified, generates an indefinite amount of random bytes.");
-        }
+        print_helpscreen(show_help > 1);
         return EXIT_SUCCESS;
     }
 
