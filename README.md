@@ -6,12 +6,14 @@ Supported platforms include Windows, Linux, macOS, FreeBSD, OpenBSD, NetBSD, Sol
 
 ## Usage
 
-Synopsis:
+**Synopsis:**
+
 ```
 xxh_rand.exe [OPTIONS] [SEED] [OUTPUT_SIZE]
 ```
 
-Options:
+**Options:**
+
 * `--hex`  
   Output as hexadecimal string. Default is "raw" bytes.
 * `--no-buffer`  
@@ -21,7 +23,8 @@ Options:
 * `--version`  
   Print version information and exit.
 
-Remarks:
+**Remarks:**
+
 * If `SEED` is *not* specified (or set to `-`), uses a random seed from the OS' entropy source.
 * If `OUTPUT_SIZE` is *not* specified, generates an indefinite amount of random bytes.
 
