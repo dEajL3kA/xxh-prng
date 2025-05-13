@@ -22,7 +22,7 @@ endif
 # Targets
 # --------------------------------------------------------------
 
-.PHONY: all clean
+.PHONY: all test clean
 
 all: clean $(OUTFILE)
 
@@ -30,6 +30,9 @@ $(OUTFILE): $(wildcard src/*.c)
 	mkdir -p bin
 	$(CC) $(CFLAGS) -o $@ $^ $(LDLIBS)
 	$(STRIP) $@
+
+test: $(OUTFILE)
+	$(OUTFILE) | dieharder -g 200 -a -k 2 -Y 1
 
 clean:
 	rm -rf $(dir $(OUTFILE))
