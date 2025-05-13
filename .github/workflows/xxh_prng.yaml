@@ -1,0 +1,51 @@
+name: "xxh-prng-CI"
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+  release:
+    types: [published]
+
+jobs:
+  linux:
+    name: Linux build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: awalsh128/cache-apt-pkgs-action@v1
+        with:
+          packages: crossbuild-essential-amd64 crossbuild-essential-i386 crossbuild-essential-arm64
+          version: 1.0
+      - uses: actions/checkout@v4
+      - run: mkdir dist
+      - run: |
+          make CC=x86_64-linux-gnu-gcc STRIP=x86_64-linux-gnu-strip
+          mv -vf bin/xxh_rand dist/xxh_rand-x86_64
+      - run: |
+          make CC=i686-linux-gnu-gcc STRIP=i686-linux-gnu-strip
+          mv -vf bin/xxh_rand dist/xxh_rand-i686
+      - run: |
+          make CC=aarch64-linux-gnu-gcc STRIP=aarch64-linux-gnu-strip
+          mv -vf bin/xxh_rand dist/xxh_rand-aarch64
+      - uses: actions/upload-artifact@v4
+        with:
+          name: xxh-prng-linux
+          path: dist/
+
+  windows:
+    name: Windows build
+    runs-on: windows-latest
+    steps:
+      - uses: microsoft/setup-msbuild@v2
+      - uses: actions/checkout@v4
+      - run: mkdir dist
+      - run: |
+          msbuild -t:rebuild -property:Configuration=Release -property:Platform=x86 xxh_rand.sln
+          Move-Item -Force -Path bin/Win32/Release/xxh_rand.exe -Destination dist/xxh_rand-win32.exe
+      - run: |
+          msbuild -t:rebuild -property:Configuration=Release -property:Platform=x64 xxh_rand.sln
+          Move-Item -Force -Path bin/x64/Release/xxh_rand.exe -Destination dist/xxh_rand-win64.exe
+      - uses: actions/upload-artifact@v4
+        with:
+          name: xxh-prng-windows
+          path: dist/
