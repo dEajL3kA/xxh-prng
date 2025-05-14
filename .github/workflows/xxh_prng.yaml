@@ -29,7 +29,7 @@ jobs:
           mv -vf bin/xxh_rand dist/xxh_rand-aarch64
       - uses: actions/upload-artifact@v4
         with:
-          name: xxh-prng-linux
+          name: xxh64-prng-linux
           path: dist/
 
   windows:
@@ -41,11 +41,14 @@ jobs:
       - run: mkdir dist
       - run: |
           msbuild -t:rebuild -property:Configuration=Release -property:Platform=x86 xxh_rand.sln
-          Move-Item -Force -Path bin/Win32/Release/xxh_rand.exe -Destination dist/xxh_rand-win32.exe
+          Move-Item -Force -Path bin/Win32/Release/xxh_rand-x86.exe -Destination dist/
       - run: |
           msbuild -t:rebuild -property:Configuration=Release -property:Platform=x64 xxh_rand.sln
-          Move-Item -Force -Path bin/x64/Release/xxh_rand.exe -Destination dist/xxh_rand-win64.exe
+          Move-Item -Force -Path bin/x64/Release/xxh_rand-x64.exe -Destination dist/
+      - run: |
+          msbuild -t:rebuild -property:Configuration=Release -property:Platform=ARM64 xxh_rand.sln
+          Move-Item -Force -Path bin/ARM64/Release/xxh_rand-a64.exe -Destination dist/
       - uses: actions/upload-artifact@v4
         with:
-          name: xxh-prng-windows
+          name: xxh64-prng-windows
           path: dist/

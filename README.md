@@ -42,6 +42,12 @@ xxh_rand.exe [OPTIONS] [SEED] [OUTPUT_SIZE]
 
 ## License
 
-XXH64-PRNG and xxHash are released under the **BSD 2-Clause License**.
+Copyright (c) 2025 “dEajL3kA” &lt;Cumpoing79@web.de&gt;
 
-Please refer to <https://www.opensource.org/licenses/bsd-license.php> for details!
+This work has been released under the **BSD 2-Clause "Simplified" License**.  
+<https://opensource.org/license/bsd-2-clause/>
+
+### Acknowledgment
+
+This work is based on code from the **xxHash** project:  
+<https://github.com/Cyan4973/xxHash>

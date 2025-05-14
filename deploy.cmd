@@ -3,26 +3,30 @@ setlocal EnableDelayedExpansion
 
 cd /d "%~d0"
 
-if "%VS2022INSTALLDIR%" == "" (
-	for %%e in (Community, Professional) do (
-		if exist "C:\Program Files\Microsoft Visual Studio\2022\%%e\VC\Auxiliary\Build\vcvars64.bat" (
-			set "VS2022INSTALLDIR=C:\Program Files\Microsoft Visual Studio\2022\%%e"
-			goto:exit_loop
-		)
+for /f "usebackq delims=" %%i in (`etc\tools\win32\vswhere\vswhere.exe -version 17 -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -latest -property installationPath`) do (
+	if exist "%%~i\VC\Auxiliary\Build\vcvars64.bat" (
+		set "VS2022INSTALLDIR=%%~i"
+		goto:vs_found
 	)
 )
 
-:exit_loop
+echo Microsoft Visual C++ 2022 not found ^^!^^!^^!
+pause && goto:eof
 
-if not exist "%VS2022INSTALLDIR%\VC\Auxiliary\Build\vcvars64.bat" (
-	echo Microsoft Visual C++ not found ^^!^^!^^!
-	pause && goto:eof
+:vs_found
+
+call "%VS2022INSTALLDIR%\VC\Auxiliary\Build\vcvars64.bat"
+
+if "%PROCESSOR_ARCHITECTURE%" == "AMD64" (
+	set PreferredToolArchitecture=x64
 )
-
-call "%VS2022INSTALLDIR%\VC\Auxiliary\Build\vcvars64.bat" x64
 
 for %%d in (bin obj) do (
 	if exist "%CD%/%%d/" rmdir /S /Q "%CD%/%%d"
+	if exist "%CD%/%%d/" (
+		echo Failed to clean up intermediate files ^^!^^!^^!
+		pause && goto:eof
+	)
 )
 
 for %%p in (x86 x64 ARM64) do (
