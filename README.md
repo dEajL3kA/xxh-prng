@@ -4,6 +4,8 @@ A pseudo-random number generator based on the [XXH64](https://xxhash.com/) hash 
 
 Supported platforms include Windows, Linux, macOS, FreeBSD, OpenBSD, NetBSD, Solaris, Haiku OS and GNU Hurd.
 
+It has been verified to successfully pass the full [Dieharder](https://webhome.phy.duke.edu/~rgb/General/dieharder.php) test suite &#128526;
+
 ## Usage
 
 **Synopsis:**
@@ -39,6 +41,24 @@ xxh_rand.exe [OPTIONS] [SEED] [OUTPUT_SIZE]
    ```
    xxh_rand.exe --hex - 32
    ```
+
+## Algorithm
+
+XXH64-PRNG algorithm overview:
+
+![](etc/images/xxh64-prng-r1.svg)
+
+## Source Code
+
+Official GitHub repository:
+
+* <https://github.com/dEajL3kA/xxh-prng>
+
+Mirrors:
+
+* <https://gitlab.com/deajl3ka1/xxh64-prng>
+
+* <https://repo.or.cz/xhh-prng.git>
 
 ## License
 
