@@ -60,7 +60,7 @@ if [ -z "$target_name" ]; then
 fi
 
 case "$target_name" in
-	*-w64-mingw32|*-pc-cygwin|*-w64-windows-gnu)
+	*-w64-mingw32|*-pc-cygwin|*-w64-windows*)
 		suffix="exe"
 		;;
 esac
@@ -69,7 +69,7 @@ case "$target_name" in
 	x86_64-*)
 		xflags="$xflags -march=x86-64"
 		;;
-	i686-*)
+	i[3456]86-*|x86-*)
 		xflags="$xflags -march=pentium3 -mtune=generic"
 		;;
 esac

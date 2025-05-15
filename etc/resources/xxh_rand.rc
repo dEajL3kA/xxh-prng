@@ -1,0 +1,63 @@
+/////////////////////////////////////////////////////////////////////////////
+//
+// Microsoft Visual C++ generated resource script.
+//
+#include "../../src/version.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+#include <WinResrc.h>
+#undef APSTUDIO_READONLY_SYMBOLS
+
+#define MY_VERSION_NUMBER XXH64PRNG_VERSION_MAJOR, XXH64PRNG_VERSION_MINOR, XXH64PRNG_VERSION_PATCH, 0
+#define ___MY_VERSION_STRING(X) #X
+#define __MY_VERSION_STRING(X,Y,Z) ___MY_VERSION_STRING(X.Y.Z)
+#define _MY_VERSION_STRING(X,Y,Z) __MY_VERSION_STRING(X,Y,Z)
+#define MY_VERSION_STRING _MY_VERSION_STRING(XXH64PRNG_VERSION_MAJOR, XXH64PRNG_VERSION_MINOR, XXH64PRNG_VERSION_PATCH)
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Neutral resources
+//
+#ifdef _WIN32
+LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
+#pragma code_page(1252)
+#endif //_WIN32
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Version
+//
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION    MY_VERSION_NUMBER
+ PRODUCTVERSION MY_VERSION_NUMBER
+ FILEFLAGSMASK 0x17L
+#ifdef _DEBUG
+ FILEFLAGS 0x3L
+#else
+ FILEFLAGS 0x2L
+#endif
+ FILEOS 0x40004L
+ FILETYPE 0x1L
+ FILESUBTYPE 0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "000004b0"
+        BEGIN
+            VALUE "ProductName",      "XXH64-PRNG"
+            VALUE "FileDescription",  "XXH64-PRNG (" XXH64PRNG_ARCH ")"
+            VALUE "ProductVersion",   MY_VERSION_STRING
+            VALUE "FileVersion",      MY_VERSION_STRING
+            VALUE "InternalName",     "xxh_rand"
+            VALUE "OriginalFilename", "xxh_rand.exe"
+            VALUE "LegalCopyright",   "Copyright (c) 2025 dEajL3kA <Cumpoing79@web.de>"
+            VALUE "CompanyName",      "dEajL3kA"
+            VALUE "LegalTrademarks",  "dEajL3kA"
+            VALUE "Comments",         "Released under the BSD 2-Clause 'Simplified' license"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x0, 1200
+    END
+END

@@ -46,7 +46,7 @@ xxh_rand.exe [OPTIONS] [SEED] [OUTPUT_SIZE]
 
 XXH64-PRNG algorithm overview:
 
-![](etc/images/xxh64-prng-r1.svg)
+![](etc/images/xxh64-prng-r2.svg)
 
 ## Source Code
 

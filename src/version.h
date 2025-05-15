@@ -27,40 +27,21 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef OS_SUPPORT_H
-#define OS_SUPPORT_H
+#ifndef VERSION_H
+#define VERSION_H
 
-#if defined(__cplusplus)
-#  include <cstdlib>
-#  include <cstdint>
+#define XXH64PRNG_VERSION_MAJOR 1
+#define XXH64PRNG_VERSION_MINOR 1
+#define XXH64PRNG_VERSION_PATCH 0
+
+#if defined(_M_X64) || defined(__x86_64__) || defined(__amd64__)
+#  define XXH64PRNG_ARCH "x64"
+#elif defined(_M_ARM64) || defined(__aarch64__)
+#  define XXH64PRNG_ARCH "ARM64"
+#elif defined(_M_IX86) || defined(__IA32__) || defined(__i386__) || defined(__i386)
+#  define XXH64PRNG_ARCH "x86"
 #else
-#  include <stdlib.h>
-#  include <stdint.h>
+#  error Unknown CPU architecture!
 #endif
 
-#if defined(_WIN32)
-#  define FWRITE _fwrite_nolock
-#elif defined(__linux__) || defined(__CYGWIN__) || defined(__FreeBSD__) || defined(__HAIKU__)
-#  define FWRITE fwrite_unlocked
-#else
-#  define FWRITE fwrite
-#endif
-
-#ifdef _WIN32
-#  define STRICMP _stricmp
-#else
-#  define STRICMP strcasecmp
-#endif
-
-#if defined(__cplusplus)
-extern "C" {
-#endif
-
-int read_entropy(uint8_t *const buffer, const size_t length);
-void zero_memory(uint8_t* const buffer, const size_t length);
-
-#if defined(__cplusplus)
-}
-#endif
-
-#endif /*OS_SUPPORT_H*/
+#endif /*VERSION_H*/

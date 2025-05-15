@@ -32,5 +32,18 @@
     <ClInclude Include="src\os_support.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
+    <ClInclude Include="src\version.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="etc\resources\xxh_rand.rc">
+      <Filter>Ressourcendateien</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Manifest Include="etc\resources\compatibility.manifest">
+      <Filter>Ressourcendateien</Filter>
+    </Manifest>
   </ItemGroup>
 </Project>

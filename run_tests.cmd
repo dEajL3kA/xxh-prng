@@ -3,7 +3,7 @@ setlocal EnableDelayedExpansion
 
 cd /d "%~dp0"
 
-if "%PROCESSOR_ARCHITECTURE%" == "AMD63" (
+if "%PROCESSOR_ARCHITECTURE%" == "AMD64" (
 	set "EXE_FILE=%CD%\bin\x64\Release\xxh_rand-x64.exe"
 ) else (
 	if "%PROCESSOR_ARCHITECTURE%" == "ARM64" (

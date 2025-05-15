@@ -29,6 +29,7 @@
 
 #include "xxh64.h"
 #include "os_support.h"
+#include "version.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -39,16 +40,23 @@
 #  include <io.h>
 #endif
 
-static const unsigned int VERSION_MAJOR = 1U;
-static const unsigned int VERSION_MINOR = 0U;
+static const unsigned int VERSION_MAJOR = XXH64PRNG_VERSION_MAJOR;
+static const unsigned int VERSION_MINOR = XXH64PRNG_VERSION_MINOR;
+static const unsigned int VERSION_PATCH = XXH64PRNG_VERSION_PATCH;
+
+static const char *const BUILD_DATE = __DATE__;
+static const char *const BUILD_ARCH = XXH64PRNG_ARCH;
 
 #define STATE_WORDS 8U
 #define STATE_BYTES ((size_t)(sizeof(uint64_t) * STATE_WORDS))
 
-#define BUFFR_MULTP 8U
-#define BUFFR_WORDS (BUFFR_MULTP * STATE_WORDS)
+#define TEMP_WORDS (2U * STATE_WORDS)
+#define TEMP_BYTES ((size_t)(sizeof(uint64_t) * TEMP_WORDS))
 
-#define MAX_CHUNKSIZE ((size_t)(sizeof(uint64_t) * (BUFFR_MULTP - 1U) * STATE_WORDS))
+#define BUFFER_WORDS (8U * STATE_WORDS)
+#define BUFFER_BYTES ((size_t)(sizeof(uint64_t) * BUFFER_WORDS))
+
+#define HEX_BUFFLEN 256U
 
 /* ======================================================================== */
 /* Utility functions                                                        */
@@ -65,19 +73,29 @@ static int parse_uint64(const char *const str, uint64_t *const value)
     return 1;
 }
 
-#define _FWRITE_HEXCHAR(SHIFT) \
-    if (FPUTC(HEX_CHARS[(buffer[pos] >> SHIFT) & 0xF], stream) == EOF) { \
-        return 0; \
-    }
-
 static int fwrite_hexchars(const uint8_t *const buffer, const size_t length, FILE *const stream)
 {
-    static const char* const HEX_CHARS = "0123456789ABCDEF";
-    size_t pos;
+    static const char *const HEX_CHARS = "0123456789ABCDEF";
+    char hexstr[HEX_BUFFLEN];
+    size_t pos, counter = 0U;
+
     for (pos = 0U; pos < length; ++pos) {
-        _FWRITE_HEXCHAR(0)
-        _FWRITE_HEXCHAR(4)
+        hexstr[counter++] = HEX_CHARS[buffer[pos] & 0xF];
+        hexstr[counter++] = HEX_CHARS[buffer[pos] >> 4L];
+        if (counter >= HEX_BUFFLEN) {
+            counter = 0U;
+            if (FWRITE(hexstr, sizeof(char), HEX_BUFFLEN, stream) != HEX_BUFFLEN) {
+                return 0;
+            }
+        }
     }
+
+    if (counter > 0U) {
+        if (FWRITE(hexstr, sizeof(char), counter, stream) != counter) {
+            return 0;
+        }
+    }
+
     return 1;
 }
 
@@ -93,9 +111,15 @@ static int fwrite_hexchars(const uint8_t *const buffer, const size_t length, FIL
 
 static void print_helpscreen(const int full_help)
 {
-    printf("XXH64-based pseudo-random number generator v%u.%u [" __DATE__ "]\n", VERSION_MAJOR, VERSION_MINOR);
+    if (VERSION_PATCH) {
+        printf("XXH64-PRNG v%u.%u-%u [%s] [%s]\n", VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH, BUILD_ARCH, BUILD_DATE);
+    }
+    else {
+        printf("XXH64-PRNG v%u.%u [%s] [%s]\n", VERSION_MAJOR, VERSION_MINOR, BUILD_ARCH, BUILD_DATE);
+    }
     if (full_help) {
-        puts("\nSynopsis:");
+        puts("Blazing fast XXH64-based secure pseudo-random number generator\n");
+        puts("Synopsis:");
         puts("  " EXE_FILENAME " [OPTIONS] [SEED] [OUTPUT_SIZE]\n");
         puts("Options:");
         puts("  --hex        Output as hexadecimal string. Default is \"raw\" bytes.");
@@ -115,7 +139,8 @@ int main(int argc, char *argv[])
 {
     int index = 1, hex_output = 0, no_buffer = 0, show_help = 0, is_seeded = 0;
     size_t chunk_size, pos;
-    uint64_t remaining = UINT64_MAX, rand_buffer[BUFFR_WORDS], state[STATE_WORDS] = { 0U };
+    uint64_t remaining = UINT64_MAX, iter, buffer[BUFFER_WORDS], state[STATE_WORDS], temp[TEMP_WORDS];
+    static const uint64_t ZERO_STATE[STATE_WORDS] = { 0U };
 
     while (index < argc) {
         if (((argv[index][0] == '/') || (argv[index][0] == '-')) && (argv[index][1] == '?')) {
@@ -175,7 +200,7 @@ int main(int argc, char *argv[])
                 return EXIT_FAILURE;
             }
             for (pos = 1U; pos < STATE_WORDS; ++pos) {
-                state[pos] = XXH64(&state[0U], sizeof(uint64_t), 42U + pos);
+                state[pos] = XXH64(&state[0U], sizeof(uint64_t), UINT64_MAX - pos);
             }
             is_seeded = 1;
         }
@@ -207,25 +232,32 @@ int main(int argc, char *argv[])
 #ifdef _DEBUG
         fprintf(stderr, "%016llX %016llX %016llX %016llX %016llX %016llX %016llX %016llX\n", state[0U], state[1U], state[2U], state[3U], state[4U], state[5U], state[6U], state[7U]);
 #endif
+        iter = UINT64_C(0);
 
-        for (pos = 0U; pos < BUFFR_WORDS; ++pos) {
-            rand_buffer[pos] = XXH64(state, STATE_BYTES, pos);
-        }
+        do {
+            for (pos = 0U; pos < TEMP_WORDS; ++pos) {
+                temp[pos] = XXH64(state, STATE_BYTES, iter++);
+            }
+        } while (!memcmp(temp, ZERO_STATE, STATE_BYTES));
 
         for (pos = 0U; pos < STATE_WORDS; ++pos) {
-            state[pos] ^= rand_buffer[pos];
+            state[pos] ^= temp[pos];
         }
 
-        zero_memory((uint8_t*)rand_buffer, STATE_BYTES);
+        for (pos = 0U; pos < BUFFER_WORDS; ++pos) {
+            buffer[pos] = XXH64(temp + STATE_WORDS, STATE_BYTES, iter++);
+        }
 
-        chunk_size = (remaining >= MAX_CHUNKSIZE) ? MAX_CHUNKSIZE : ((size_t)remaining);
+        zero_memory((uint8_t*)temp, TEMP_BYTES);
+
+        chunk_size = (remaining >= BUFFER_BYTES) ? BUFFER_BYTES : ((size_t)remaining);
 
         if (!hex_output) {
-            if (FWRITE(rand_buffer + STATE_WORDS, chunk_size, 1U, stdout) != 1U) {
+            if (FWRITE(buffer, 1U, chunk_size, stdout) != chunk_size) {
                 break;
             }
         } else {
-            if (!fwrite_hexchars((const uint8_t*)(rand_buffer + STATE_WORDS), chunk_size, stdout)) {
+            if (!fwrite_hexchars((const uint8_t*)buffer, chunk_size, stdout)) {
                 break;
             }
         }
@@ -235,8 +267,9 @@ int main(int argc, char *argv[])
         }
     }
 
-    zero_memory((uint8_t*)rand_buffer, sizeof(rand_buffer));
-    zero_memory((uint8_t*)state, sizeof(state));
+    zero_memory((uint8_t*)state, STATE_BYTES);
+    zero_memory((uint8_t*)temp, TEMP_BYTES);
+    zero_memory((uint8_t*)buffer, BUFFER_BYTES);
 
     return EXIT_SUCCESS;
 }
