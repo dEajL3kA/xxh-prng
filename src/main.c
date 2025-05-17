@@ -1,30 +1,31 @@
 /*
- * XXH64-based pseudo-random number generator
+ * XXH64-PRNG
+ * Blazing fast XXH64-based secure pseudo-random number generator
  *
- * BSD 2-Clause License (https://www.opensource.org/licenses/bsd-license.php)
+ * Copyright (c) 2025 "dEajL3kA" <Cumpoing79@web.de>
  *
  * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * modification, are permitted provided that the following conditions are met:
  *
- *    * Redistributions of source code must retain the above copyright
- *      notice, this list of conditions and the following disclaimer.
- *    * Redistributions in binary form must reproduce the above
- *      copyright notice, this list of conditions and the following disclaimer
- *      in the documentation and/or other materials provided with the
- *      distribution.
+ * 1. Redistributions of source code must retain the above copyright notice, this
+ *    list of conditions and the following disclaimer.
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ * https://www.opensource.org/licenses/bsd-license.php
  */
 
 #include "xxh64.h"
@@ -50,10 +51,12 @@ static const char *const BUILD_ARCH = XXH64PRNG_ARCH;
 #define STATE_WORDS 8U
 #define STATE_BYTES ((size_t)(sizeof(uint64_t) * STATE_WORDS))
 
-#define TEMP_WORDS (2U * STATE_WORDS)
+#define TEMP_MULTI 2U
+#define TEMP_WORDS (TEMP_MULTI * STATE_WORDS)
 #define TEMP_BYTES ((size_t)(sizeof(uint64_t) * TEMP_WORDS))
 
-#define BUFFER_WORDS (8U * STATE_WORDS)
+#define BUFFER_MULTI 8U
+#define BUFFER_WORDS (BUFFER_MULTI * STATE_WORDS)
 #define BUFFER_BYTES ((size_t)(sizeof(uint64_t) * BUFFER_WORDS))
 
 #define HEX_BUFFLEN 256U
@@ -62,7 +65,7 @@ static const char *const BUILD_ARCH = XXH64PRNG_ARCH;
 /* Utility functions                                                        */
 /* ======================================================================== */
 
-static int parse_uint64(const char *const str, uint64_t *const value)
+static INLINE int parse_uint64(const char *const str, uint64_t *const value)
 {
     char *endptr = NULL;
     errno = 0;
@@ -73,7 +76,7 @@ static int parse_uint64(const char *const str, uint64_t *const value)
     return 1;
 }
 
-static int fwrite_hexchars(const uint8_t *const buffer, const size_t length, FILE *const stream)
+static INLINE int fwrite_hexchars(const uint8_t *const buffer, const size_t length, FILE *const stream)
 {
     static const char *const HEX_CHARS = "0123456789ABCDEF";
     char hexstr[HEX_BUFFLEN];
@@ -132,15 +135,52 @@ static void print_helpscreen(const int full_help)
 }
 
 /* ======================================================================== */
+/* Random generator                                                         */
+/* ======================================================================== */
+
+static const uint64_t ZERO_STATE[STATE_WORDS] = { 0U };
+
+static INLINE void xxh64prng_init(uint64_t *const state, const uint64_t seed)
+{
+    size_t pos;
+
+    for (pos = 0U; pos < STATE_WORDS; ++pos) {
+        state[pos] = XXH64(&seed, sizeof(uint64_t), UINT64_MAX - pos);
+    }
+}
+
+static INLINE void xxh64prng_next(uint64_t *const state, uint64_t *const out_buffer)
+{
+    uint64_t iter = 0U, temp[TEMP_MULTI][STATE_WORDS];
+    size_t pos;
+
+    do {
+        for (pos = 0U; pos < TEMP_WORDS; ++pos) {
+            ((uint64_t*)temp)[pos] = XXH64(state, STATE_BYTES, iter++);
+        }
+    } while ((!memcmp(temp[0U], ZERO_STATE, STATE_BYTES)) || (!memcmp(temp[1U], ZERO_STATE, STATE_BYTES)));
+
+    for (pos = 0U; pos < STATE_WORDS; ++pos) {
+        temp[1U][pos] ^= state[pos];
+        state[pos] ^= temp[0U][pos];
+    }
+
+    for (pos = 0U; pos < BUFFER_WORDS; ++pos) {
+        out_buffer[pos] = XXH64(temp[1U], STATE_BYTES, iter++);
+    }
+
+    zero_memory((uint8_t*)temp, TEMP_BYTES);
+}
+
+/* ======================================================================== */
 /* MAIN                                                                     */
 /* ======================================================================== */
 
 int main(int argc, char *argv[])
 {
     int index = 1, hex_output = 0, no_buffer = 0, show_help = 0, is_seeded = 0;
-    size_t chunk_size, pos;
-    uint64_t remaining = UINT64_MAX, iter, buffer[BUFFER_WORDS], state[STATE_WORDS], temp[TEMP_WORDS];
-    static const uint64_t ZERO_STATE[STATE_WORDS] = { 0U };
+    size_t chunk_size;
+    uint64_t remaining = UINT64_MAX, buffer[BUFFER_WORDS], state[STATE_WORDS];
 
     while (index < argc) {
         if (((argv[index][0] == '/') || (argv[index][0] == '-')) && (argv[index][1] == '?')) {
@@ -195,13 +235,12 @@ int main(int argc, char *argv[])
 
     if (index < argc) {
         if ((*argv[index]) && (STRICMP(argv[index], "-") != 0)) {
-            if (!parse_uint64(argv[index], &state[0U])) {
+            uint64_t seed;
+            if (!parse_uint64(argv[index], &seed)) {
                 fprintf(stderr, "Error: Invalid seed value! (\"%s\")\n", argv[index]);
                 return EXIT_FAILURE;
             }
-            for (pos = 1U; pos < STATE_WORDS; ++pos) {
-                state[pos] = XXH64(&state[0U], sizeof(uint64_t), UINT64_MAX - pos);
-            }
+            xxh64prng_init(state, seed);
             is_seeded = 1;
         }
         ++index;
@@ -232,23 +271,7 @@ int main(int argc, char *argv[])
 #ifdef _DEBUG
         fprintf(stderr, "%016llX %016llX %016llX %016llX %016llX %016llX %016llX %016llX\n", state[0U], state[1U], state[2U], state[3U], state[4U], state[5U], state[6U], state[7U]);
 #endif
-        iter = UINT64_C(0);
-
-        do {
-            for (pos = 0U; pos < TEMP_WORDS; ++pos) {
-                temp[pos] = XXH64(state, STATE_BYTES, iter++);
-            }
-        } while (!memcmp(temp, ZERO_STATE, STATE_BYTES));
-
-        for (pos = 0U; pos < STATE_WORDS; ++pos) {
-            state[pos] ^= temp[pos];
-        }
-
-        for (pos = 0U; pos < BUFFER_WORDS; ++pos) {
-            buffer[pos] = XXH64(temp + STATE_WORDS, STATE_BYTES, iter++);
-        }
-
-        zero_memory((uint8_t*)temp, TEMP_BYTES);
+        xxh64prng_next(state, buffer);
 
         chunk_size = (remaining >= BUFFER_BYTES) ? BUFFER_BYTES : ((size_t)remaining);
 
@@ -268,7 +291,6 @@ int main(int argc, char *argv[])
     }
 
     zero_memory((uint8_t*)state, STATE_BYTES);
-    zero_memory((uint8_t*)temp, TEMP_BYTES);
     zero_memory((uint8_t*)buffer, BUFFER_BYTES);
 
     return EXIT_SUCCESS;

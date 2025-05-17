@@ -1,3 +1,4 @@
+*.html
 *.user
 /.vs
 /bin

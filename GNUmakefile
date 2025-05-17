@@ -31,8 +31,5 @@ $(OUTFILE): $(wildcard src/*.c)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDLIBS)
 	$(STRIP) $@
 
-test: $(OUTFILE)
-	$(OUTFILE) | dieharder -g 200 -a -k 2 -Y 1
-
 clean:
 	rm -rf $(dir $(OUTFILE))

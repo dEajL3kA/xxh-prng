@@ -66,7 +66,7 @@ case "$target_name" in
 esac
 
 case "$target_name" in
-	x86_64-*)
+	x86_64-*|x86-64-*|amd64-*)
 		xflags="$xflags -march=x86-64"
 		;;
 	i[3456]86-*|x86-*)
