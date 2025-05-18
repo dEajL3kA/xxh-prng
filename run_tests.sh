@@ -6,9 +6,21 @@ if ! [ -x "bin/xxh_rand" ]; then
 	exit 1
 fi
 
+case "`uname -s`" in
+	NetBSD|FreeBSD|OpenBSD|DragonFly)
+		sha512cmd=sha512
+		;;
+	Darwin)
+		sha512cmd="shasum -a512"
+		;;
+	*)
+		sha512cmd="sha512sum -b"
+		;;
+esac
+
 run_test_case() {
 	echo "Computing checksum, please wait..."
-	local digest=`bin/xxh_rand $3 -- $1 1073741824 | sha512sum -b | cut -d' ' -f1`
+	digest=`bin/xxh_rand $3 -- $1 1073741824 | $sha512cmd | cut -d' ' -f1`
 	if [ "$digest" != "$2" ]; then
 		echo "Test has failed: Checksum mismatch error !!!"
 		printf "> computed: %s\n> expected: %s\n\n" "$digest" "$2"

@@ -15,7 +15,7 @@ case "$host_name" in
 	Linux)
 		cc="musl-gcc"
 		;;
-	MINGW32_NT*|MINGW64_NT*|CYGWIN_NT*|SunOS|NetBSD|GNU|Haiku)
+	MINGW32_NT*|MINGW64_NT*|CYGWIN_NT*|SunOS|NetBSD|DragonFly|GNU|Haiku)
 		cc="gcc"
 		;;
 	Darwin|FreeBSD|OpenBSD)
@@ -28,7 +28,7 @@ case "$host_name" in
 esac
 
 case "$host_name" in
-	FreeBSD|OpenBSD|NetBSD|SunOS)
+	FreeBSD|OpenBSD|NetBSD|DragonFly|SunOS)
 		make="gmake"
 		;;
 	*)
@@ -85,7 +85,7 @@ case "$target_name" in
 esac
 
 case "$target_name" in
-	*-linux-gnu|*-w64-mingw32|*-cygwin|*-haiku|*-freebsd*|*-openbsd*|*-netbsd)
+	*-linux-gnu|*-w64-mingw32|*-cygwin|*-haiku|*-freebsd*|*-openbsd*|*-netbsd*|*-dragonflybsd)
 		xflags="$xflags -static"
 		;;
 esac

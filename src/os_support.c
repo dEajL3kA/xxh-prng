@@ -66,7 +66,7 @@ void zero_memory(uint8_t* const buffer, const size_t length)
 {
 #if defined(_WIN32)
     RtlSecureZeroMemory(buffer, length);
-#elif defined(__linux__) || defined(__CYGWIN__) || defined(__FreeBSD__) || defined(__OpenBSD__) || (defined(__sun) && defined(__SVR4)) || defined(__gnu_hurd__) || defined(__HAIKU__)
+#elif defined(__linux__) || defined(__CYGWIN__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__DragonFly__) || (defined(__sun) && defined(__SVR4)) || defined(__gnu_hurd__) || defined(__HAIKU__)
     explicit_bzero(buffer, length);
 #elif defined(__NetBSD__)
     explicit_memset(buffer, 0, length);
