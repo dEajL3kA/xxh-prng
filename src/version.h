@@ -32,7 +32,7 @@
 #define VERSION_H
 
 #define XXH64PRNG_VERSION_MAJOR 1
-#define XXH64PRNG_VERSION_MINOR 2
+#define XXH64PRNG_VERSION_MINOR 3
 #define XXH64PRNG_VERSION_PATCH 0
 
 #if defined(_M_X64) || defined(__x86_64__) || defined(__amd64__)

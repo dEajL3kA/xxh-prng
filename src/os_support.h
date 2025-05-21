@@ -66,7 +66,7 @@ extern "C" {
 #endif
 
 int read_entropy(uint8_t *const buffer, const size_t length);
-void zero_memory(uint8_t* const buffer, const size_t length);
+void zero_memory(uint8_t *const buffer, const size_t length);
 
 #if defined(__cplusplus)
 }

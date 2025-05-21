@@ -62,7 +62,7 @@ int read_entropy(uint8_t *const buffer, const size_t length)
 #endif
 }
 
-void zero_memory(uint8_t* const buffer, const size_t length)
+void zero_memory(uint8_t *const buffer, const size_t length)
 {
 #if defined(_WIN32)
     RtlSecureZeroMemory(buffer, length);

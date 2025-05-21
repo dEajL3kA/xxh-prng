@@ -1,5 +1,7 @@
 CFLAGS ?= -Wall -O3 -DNDEBUG
 STRIP ?= strip
+
+INFILES := $(wildcard src/*.c)
 OUTFILE := bin/xxh_rand
 
 # --------------------------------------------------------------
@@ -18,18 +20,26 @@ ifneq ($(SUFFIX),)
   OUTFILE := $(addsuffix .$(SUFFIX),$(OUTFILE))
 endif
 
+ifneq ($(RESCOMP),)
+  INFILES += obj/xxh_rand.res
+endif
+
 # --------------------------------------------------------------
 # Targets
 # --------------------------------------------------------------
 
-.PHONY: all test clean
+.PHONY: all clean
 
 all: clean $(OUTFILE)
 
-$(OUTFILE): $(wildcard src/*.c)
+obj/%.res: etc/resources/%.rc
+	mkdir -p obj
+	$(RESCOMP) --output-format=coff -o $@ $^
+
+$(OUTFILE): $(INFILES)
 	mkdir -p bin
 	$(CC) $(CFLAGS) -o $@ $^ $(LDLIBS)
 	$(STRIP) $@
 
 clean:
-	rm -rf $(dir $(OUTFILE))
+	rm -rf bin obj

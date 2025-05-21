@@ -50,7 +50,7 @@ fi
 # Set platform-specific flags
 # --------------------------------------------------
 
-unset xlibs suffix
+unset xlibs suffix rescomp
 xflags="-flto"
 target_name=`$cc -dumpmachine`
 
@@ -61,7 +61,8 @@ fi
 
 case "$target_name" in
 	*-w64-mingw32|*-pc-cygwin|*-w64-windows*)
-		suffix="exe"
+		suffix=exe
+		rescomp=windres
 		;;
 esac
 
@@ -96,4 +97,4 @@ esac
 
 set -x
 
-$make CC="$cc" EXTRA_CFLAGS="$xflags" EXTRA_LIBS="$xlibs" SUFFIX="$suffix"
+$make CC="$cc" EXTRA_CFLAGS="$xflags" EXTRA_LIBS="$xlibs" SUFFIX="$suffix" RESCOMP="$rescomp"

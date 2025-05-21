@@ -257,5 +257,5 @@ XXH_FORCE_INLINE uint64_t XXH64_endian_align(const uint8_t *input, const size_t 
 
 uint64_t XXH64(const void *const input, const size_t len, const uint64_t seed)
 {
-	return XXH64_endian_align((const uint8_t *)input, len, seed, ((((uintptr_t)input) & 7) == 0) ? XXH_aligned : XXH_unaligned);
+	return XXH64_endian_align((const uint8_t*)input, len, seed, ((((uintptr_t)input) & 7) == 0) ? XXH_aligned : XXH_unaligned);
 }

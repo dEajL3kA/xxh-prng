@@ -44,9 +44,13 @@ xxh_rand.exe [OPTIONS] [SEED] [OUTPUT_SIZE]
 
 ## Algorithm
 
-XXH64-PRNG algorithm overview:
+XXH64-PRNG core "transition" function overview:
 
-![](etc/images/xxh64-prng-r3.svg)
+![](etc/images/xxh64-prng-core.svg)
+
+XXH64-PRNG "output" function overview:
+
+![](etc/images/xxh64-prng-ofun.svg)
 
 ## Source Code
 
