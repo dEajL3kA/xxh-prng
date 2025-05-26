@@ -28,7 +28,7 @@
  * https://www.opensource.org/licenses/bsd-license.php
  */
 
-#include "os_support.h"
+#include <xxh64_prng.h>
 
 #ifdef _WIN32
 #  define WIN32_LEAN_AND_MEAN 1
@@ -45,38 +45,44 @@
 #  include <sys/random.h>
 #endif
 
-int read_entropy(uint8_t *const buffer, const size_t length)
+/* ======================================================================== */
+/* Platfrom-specific functions                                              */
+/* ======================================================================== */
+
+/* Initialize state from the system's secure source of entropy */
+bool xxh64prng_seed(xxh64prng_t *const state)
 {
 #ifdef _WIN32
     BCRYPT_ALG_HANDLE handle = NULL;
-    int succeeded = 0;
+    bool succeeded = false;
     if (BCRYPT_SUCCESS(BCryptOpenAlgorithmProvider(&handle, BCRYPT_RNG_ALGORITHM, NULL, 0U))) {
-        if (BCRYPT_SUCCESS(BCryptGenRandom(handle, (PUCHAR)buffer, (ULONG)length, 0U))) {
-            succeeded = 1;
+        if (BCRYPT_SUCCESS(BCryptGenRandom(handle, (PUCHAR)state, (ULONG)sizeof(xxh64prng_t), 0U))) {
+            succeeded = true;
         }
         BCryptCloseAlgorithmProvider(handle, 0U);
     }
     return succeeded;
 #else
-    return (getentropy(buffer, length) == 0); /* supported on pretty much all Unixes */
+    return (getentropy(state, sizeof(xxh64prng_t)) == 0); /* supported on pretty much all Unixes */
 #endif
 }
 
-void zero_memory(uint8_t *const buffer, const size_t length)
+/* Securely zero-fill memory area */
+void xxh64prng_zero(void *const addr, const size_t len)
 {
 #if defined(_WIN32)
-    RtlSecureZeroMemory(buffer, length);
+    RtlSecureZeroMemory(addr, len);
 #elif defined(__linux__) || defined(__CYGWIN__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__DragonFly__) || (defined(__sun) && defined(__SVR4)) || defined(__gnu_hurd__) || defined(__HAIKU__)
-    explicit_bzero(buffer, length);
+    explicit_bzero(addr, len);
 #elif defined(__NetBSD__)
-    explicit_memset(buffer, 0, length);
+    explicit_memset(addr, 0, len);
 #elif (defined(__APPLE__) && defined(__MACH__))
-    memset_s(buffer, RSIZE_MAX, 0, length);
+    memset_s(addr, RSIZE_MAX, 0, len);
 #else
 #pragma message("explicit_bzero() or equivalent is not supported on this platform, using fallback implementation!")
-    volatile uint8_t *const vptr = (volatile uint8_t*) buffer;
+    volatile uint8_t *const vptr = (volatile uint8_t*) addr;
     size_t pos;
-    for (pos = 0U; pos < length; ++pos) {
+    for (pos = 0U; pos < len; ++pos) {
         vptr[pos] = 0U;
     }
 #endif

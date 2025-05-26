@@ -40,8 +40,8 @@
  *   - xxHash source repository: https://github.com/Cyan4973/xxHash
  */
 
-#ifndef XXH64_H
-#define XXH64_H
+#ifndef _XXH64_H
+#define _XXH64_H
 
 #if defined(__cplusplus)
 #  include <cstdlib>
@@ -61,4 +61,4 @@ uint64_t XXH64(const void *const input, const size_t len, const uint64_t seed);
 }
 #endif
 
-#endif /*XXH64_H*/
+#endif /*_XXH64_H*/

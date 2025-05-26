@@ -28,8 +28,8 @@
  * https://www.opensource.org/licenses/bsd-license.php
  */
 
-#ifndef OS_SUPPORT_H
-#define OS_SUPPORT_H
+#ifndef _XXH64PRNG_H
+#define _XXH64PRNG_H
 
 #if defined(__cplusplus)
 #  include <cstdlib>
@@ -37,39 +37,44 @@
 #else
 #  include <stdlib.h>
 #  include <stdint.h>
+#  include <stdbool.h>
 #endif
 
-#if defined(_WIN32)
-#  define FWRITE _fwrite_nolock
-#elif defined(__linux__) || defined(__CYGWIN__) || defined(__FreeBSD__) || defined(__HAIKU__)
-#  define FWRITE fwrite_unlocked
-#else
-#  define FWRITE fwrite
-#endif
+/* internal state size */
+#define _XXH64PRNG_STATE_WORDS 8U
+#define _XXH64PRNG_STATE_BYTES ((size_t)(sizeof(uint64_t) * _XXH64PRNG_STATE_WORDS))
 
-#ifdef _WIN32
-#  define STRICMP _stricmp
-#else
-#  define STRICMP strcasecmp
-#endif
+/* output block size */
+#define XXH64PRNG_OUTPUT_WORDS (12 * _XXH64PRNG_STATE_WORDS)
+#define XXH64PRNG_OUTPUT_BYTES ((size_t)(sizeof(uint64_t) * XXH64PRNG_OUTPUT_WORDS))
 
-#if defined(_MSC_VER) || defined(__MINGW32__)
-#  define INLINE __inline
-#elif defined(__GNUC__) || defined(__clang__)
-#  define INLINE __inline__
-#else
-#  define INLINE
-#endif
+typedef struct xxh64prng {
+	uint64_t state[_XXH64PRNG_STATE_WORDS];
+} xxh64prng_t;
 
 #if defined(__cplusplus)
 extern "C" {
 #endif
 
-int read_entropy(uint8_t *const buffer, const size_t length);
-void zero_memory(uint8_t *const buffer, const size_t length);
+/* version number */
+extern const uint16_t XXH64PRNG_VERSION_MAJOR;
+extern const uint16_t XXH64PRNG_VERSION_MINOR;
+extern const uint16_t XXH64PRNG_VERSION_PATCH;
+
+/* build info */
+extern const char* const XXH64PRNG_DATE;
+extern const char* const XXH64PRNG_ARCH;
+
+/* RNG functions */
+void xxh64prng_init(xxh64prng_t *const state, const uint64_t seed);
+bool xxh64prng_seed(xxh64prng_t *const state);
+void xxh64prng_next(xxh64prng_t *const state, uint64_t *const out);
+
+/* utility functions */
+void xxh64prng_zero(void *const addr, const size_t len);
 
 #if defined(__cplusplus)
 }
 #endif
 
-#endif /*OS_SUPPORT_H*/
+#endif /*_XXH64PRNG_H*/

@@ -28,21 +28,23 @@
  * https://www.opensource.org/licenses/bsd-license.php
  */
 
-#ifndef VERSION_H
-#define VERSION_H
+#ifndef _XXH64PRNG_VERSION_H
+#define _XXH64PRNG_VERSION_H
 
-#define XXH64PRNG_VERSION_MAJOR 1
-#define XXH64PRNG_VERSION_MINOR 3
-#define XXH64PRNG_VERSION_PATCH 0
+/* Version */
+#define _XXH64PRNG_VERSION_MAJOR 1
+#define _XXH64PRNG_VERSION_MINOR 3
+#define _XXH64PRNG_VERSION_PATCH 0
 
+/* CPU architecture */
 #if defined(_M_X64) || defined(__x86_64__) || defined(__amd64__)
-#  define XXH64PRNG_ARCH "x64"
+#  define _XXH64PRNG_ARCH "x64"
 #elif defined(_M_ARM64) || defined(__aarch64__)
-#  define XXH64PRNG_ARCH "ARM64"
+#  define _XXH64PRNG_ARCH "ARM64"
 #elif defined(_M_IX86) || defined(__IA32__) || defined(__i386__) || defined(__i386)
-#  define XXH64PRNG_ARCH "x86"
+#  define _XXH64PRNG_ARCH "x86"
 #else
 #  error Unknown CPU architecture!
 #endif
 
-#endif /*VERSION_H*/
+#endif /*_XXH64PRNG_VERSION_H*/

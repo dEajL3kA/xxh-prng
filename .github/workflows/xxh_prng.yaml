@@ -7,6 +7,9 @@ on:
   release:
     types: [published]
 
+env:
+  NON_INTERACTIVE: 1
+
 jobs:
   linux:
     name: Linux build
@@ -19,13 +22,13 @@ jobs:
       - uses: actions/checkout@v4
       - run: mkdir dist
       - run: |
-          make CC=x86_64-linux-gnu-gcc STRIP=x86_64-linux-gnu-strip
+          ./deploy.sh x86_64-linux-gnu-gcc x86_64-linux-gnu-strip
           mv -vf bin/xxh_rand dist/xxh_rand-x86_64
       - run: |
-          make CC=i686-linux-gnu-gcc STRIP=i686-linux-gnu-strip
+          ./deploy.sh i686-linux-gnu-gcc i686-linux-gnu-strip
           mv -vf bin/xxh_rand dist/xxh_rand-i686
       - run: |
-          make CC=aarch64-linux-gnu-gcc STRIP=aarch64-linux-gnu-strip
+          ./deploy.sh aarch64-linux-gnu-gcc aarch64-linux-gnu-strip
           mv -vf bin/xxh_rand dist/xxh_rand-aarch64
       - uses: actions/upload-artifact@v4
         with:
@@ -38,15 +41,11 @@ jobs:
     steps:
       - uses: microsoft/setup-msbuild@v2
       - uses: actions/checkout@v4
-      - run: mkdir dist
+      - run: New-Item -ItemType Directory dist
+      - run: cmd.exe /c deploy.cmd
       - run: |
-          msbuild -t:rebuild -property:Configuration=Release -property:Platform=x86 xxh_rand.sln
           Move-Item -Force -Path bin/Win32/Release/xxh_rand-x86.exe -Destination dist/
-      - run: |
-          msbuild -t:rebuild -property:Configuration=Release -property:Platform=x64 xxh_rand.sln
           Move-Item -Force -Path bin/x64/Release/xxh_rand-x64.exe -Destination dist/
-      - run: |
-          msbuild -t:rebuild -property:Configuration=Release -property:Platform=ARM64 xxh_rand.sln
           Move-Item -Force -Path bin/ARM64/Release/xxh_rand-a64.exe -Destination dist/
       - uses: actions/upload-artifact@v4
         with:

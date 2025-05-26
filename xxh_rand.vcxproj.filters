@@ -13,28 +13,32 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Headerdateien\public">
+      <UniqueIdentifier>{419cd0f5-bcd3-4137-9fa8-769d93cbcc06}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Headerdateien\internal">
+      <UniqueIdentifier>{0687bd66-3fdc-49f0-b283-e9635ecd4b4e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Quelldateien\library">
+      <UniqueIdentifier>{6321ebe6-22cf-4929-94d0-493645f11c06}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Quelldateien\frontend">
+      <UniqueIdentifier>{ca248e3c-a613-4286-8b6e-10a9ad732972}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\xxh64.c">
-      <Filter>Quelldateien</Filter>
+    <ClCompile Include="lib\os_support.c">
+      <Filter>Quelldateien\library</Filter>
+    </ClCompile>
+    <ClCompile Include="lib\xxh64.c">
+      <Filter>Quelldateien\library</Filter>
+    </ClCompile>
+    <ClCompile Include="lib\xxh64_prng.c">
+      <Filter>Quelldateien\library</Filter>
     </ClCompile>
     <ClCompile Include="src\main.c">
-      <Filter>Quelldateien</Filter>
+      <Filter>Quelldateien\frontend</Filter>
     </ClCompile>
-    <ClCompile Include="src\os_support.c">
-      <Filter>Quelldateien</Filter>
-    </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="src\xxh64.h">
-      <Filter>Headerdateien</Filter>
-    </ClInclude>
-    <ClInclude Include="src\os_support.h">
-      <Filter>Headerdateien</Filter>
-    </ClInclude>
-    <ClInclude Include="src\version.h">
-      <Filter>Headerdateien</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="etc\resources\xxh_rand.rc">
@@ -45,5 +49,16 @@
     <Manifest Include="etc\resources\compatibility.manifest">
       <Filter>Ressourcendateien</Filter>
     </Manifest>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="lib\xxh64.h">
+      <Filter>Headerdateien\internal</Filter>
+    </ClInclude>
+    <ClInclude Include="lib\version.h">
+      <Filter>Headerdateien\internal</Filter>
+    </ClInclude>
+    <ClInclude Include="include\xxh64_prng.h">
+      <Filter>Headerdateien\public</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

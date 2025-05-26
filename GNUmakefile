@@ -1,7 +1,7 @@
-CFLAGS ?= -Wall -O3 -DNDEBUG
+CFLAGS ?= -std=gnu99 -Wall -Wextra -Wpedantic -DNDEBUG -Iinclude
 STRIP ?= strip
 
-INFILES := $(wildcard src/*.c)
+INFILES := $(wildcard lib/*.c) $(wildcard src/*.c)
 OUTFILE := bin/xxh_rand
 
 # --------------------------------------------------------------
@@ -10,6 +10,8 @@ OUTFILE := bin/xxh_rand
 
 ifneq ($(EXTRA_CFLAGS),)
   CFLAGS += $(EXTRA_CFLAGS)
+else
+  CFLAGS += -O2
 endif
 
 ifneq ($(EXTRA_LIBS),)
@@ -34,7 +36,7 @@ all: clean $(OUTFILE)
 
 obj/%.res: etc/resources/%.rc
 	mkdir -p obj
-	$(RESCOMP) --output-format=coff -o $@ $^
+	$(RESCOMP) -Ilib --output-format=coff -o $@ $^
 
 $(OUTFILE): $(INFILES)
 	mkdir -p bin

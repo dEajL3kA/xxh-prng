@@ -8,13 +8,15 @@ It has been verified to successfully pass the full [Dieharder](https://webhome.p
 
 ## Usage
 
-**Synopsis:**
+This section describes how to use the XXH64-PRNG command-line tool.
+
+### Synopsis
 
 ```
 xxh_rand.exe [OPTIONS] [SEED] [OUTPUT_SIZE]
 ```
 
-**Options:**
+### Options
 
 * `--hex`  
   Output as hexadecimal string. Default is "raw" bytes.
@@ -25,12 +27,12 @@ xxh_rand.exe [OPTIONS] [SEED] [OUTPUT_SIZE]
 * `--version`  
   Print version information and exit.
 
-**Remarks:**
+### Remarks
 
 * If `SEED` is *not* specified (or set to `-`), uses a random seed from the OS' entropy source.
 * If `OUTPUT_SIZE` is *not* specified, generates an indefinite amount of random bytes.
 
-## Examples
+### Examples
 
 1. Generate 1 GB of random data and dump to file as "raw" bytes:
    ```
@@ -51,6 +53,72 @@ XXH64-PRNG core "transition" function overview:
 XXH64-PRNG "output" function overview:
 
 ![](etc/images/xxh64-prng-ofun.svg)
+
+## API Specification
+
+This section describes the programming interface of the XXH64-PRNG library.
+
+### xxh64prng_init()
+
+Initialize (or reset) the XXH64-PRNG state from a 64-bit “seed” value.
+
+Use this function to set up the PRNG when generating *reproducible* sequences of “random” numbers is desired.
+
+- **Synopsis:**
+
+  ```c
+  void xxh64prng_init(xxh64prng_t *const state, const uint64_t seed);
+  ```
+
+- **Parameters:**
+
+  * **`state`**: Pointer to the PRNG state of type `xxh64prng_t` that will be initialized.
+
+  * **`seed`**: The seed value. Different seed values produce different sequences of “random” numbers.
+
+### xxh64prng_seed()
+
+Initialize (or reset) the XXH64-PRNG state from the system's secure entropy source.
+
+Use this function to set up the PRNG when generating *unpredictable* sequences of “random” numbers is desired.
+
+- **Synopsis:**
+
+  ```c
+  bool xxh64prng_seed(xxh64prng_t *const state);
+  ```
+
+- **Parameters:**
+
+  * **`state`**: Pointer to the PRNG state of type `xxh64prng_t` that will be initialized.
+
+- **Return value:**
+
+  * **`true`**, if the state was initialized successfully.
+
+  * **`false`**, if the system's entropy source could *not* provide the requested number of entropy bytes.
+
+### xxh64prng_next()
+
+Generate the next “block” of random data from the current XXH64-PRNG state. Also iterates the PRNG state.
+
+- **Synopsis:**
+
+  ```c
+  void xxh64prng_next(xxh64prng_t *const state, uint64_t *const out);
+  ```
+
+- **Parameters:**
+
+  * **`state`**: Pointer to the PRNG state of type `xxh64prng_t` that will be read and updated.
+
+  * **`out`**: Pointer to the buffer of type `uint64_t[XXH64PRNG_OUTPUT_WORDS]` that is going to be filled.
+
+- **Remarks:**
+  
+  * Even though the output buffer is defined as an array of `XXH64PRNG_OUTPUT_WORDS` words of type `uint64_t`, a pointer to this buffer can simply be cast to type `uint8_t*` in order to access the “raw” bytes!
+
+  * The size of the output buffer, in bytes, is equal to `XXH64PRNG_OUTPUT_BYTES`, which is currently 768 bytes.
 
 ## Source Code
 

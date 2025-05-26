@@ -5,44 +5,98 @@ set -e
 # Select compiler and make
 # --------------------------------------------------
 
-host_name=`uname -s`
+uname_s=`uname -s 2> /dev/null || true`
+uname_p=`uname -p 2> /dev/null || true`
 
-if [ "$host_name" = "Haiku" ] && [ "`uname -p`" = "x86" ]; then
-	export PATH="`setarch -p x86`"
+if [ $# -gt 0 ]; then
+	cc="$1"
+else
+	case "$uname_s" in
+		Linux)
+			cc="musl-gcc"
+			;;
+		CYGWIN*|SunOS|NetBSD|DragonFly|GNU)
+			cc="gcc"
+			;;
+		Darwin|FreeBSD|OpenBSD)
+			cc="clang"
+			;;
+		MINGW32*|MINGW64*)
+			case "$MSYSTEM" in
+				MINGW*)
+					cc="gcc"
+					;;
+				CLANG*)
+					cc="clang"
+					;;
+				*)
+					echo "Error: MSYS environment \"$MSYSTEM\" is not recognized!"
+					exit 1
+					;;
+			esac
+			;;
+		Haiku)
+			case "$uname_p" in
+				x86)
+					cc="gcc-x86"
+					;;
+				*)
+					cc="gcc"
+					;;
+			esac
+			;;
+		*)
+			echo "Error: System name \"$uname_s\" is not recognized!"
+			exit 1
+			;;
+	esac
 fi
 
-case "$host_name" in
-	Linux)
-		cc="musl-gcc"
-		;;
-	MINGW32_NT*|MINGW64_NT*|CYGWIN_NT*|SunOS|NetBSD|DragonFly|GNU|Haiku)
-		cc="gcc"
-		;;
-	Darwin|FreeBSD|OpenBSD)
-		cc="clang"
-		;;
-	*)
-		echo "Error: Host platform \"$host_name\" is not recognized!"
-		exit 1
-		;;
-esac
+if [ $# -gt 1 ]; then
+	strip="$2"
+else
+	case "$uname_s" in
+		Haiku)
+			case "$uname_p" in
+				x86)
+					strip="strip-x86"
+					;;
+				*)
+					strip="strip"
+					;;
+			esac
+			;;
+		*)
+			strip="strip"
+			;;
+	esac
+fi
 
-case "$host_name" in
-	FreeBSD|OpenBSD|NetBSD|DragonFly|SunOS)
-		make="gmake"
-		;;
-	*)
-		make="make"
-		;;
-esac
+if [ $# -gt 2 ]; then
+	make="$3"
+else
+	case "$uname_s" in
+		FreeBSD|OpenBSD|NetBSD|DragonFly|SunOS)
+			make="gmake"
+			;;
+		*)
+			make="make"
+			;;
+	esac
+fi
 
 if ! which "$cc" > /dev/null 2>&1; then
-	echo "Compiler executable for \"$cc\" not found"!
+	echo "Executable for \"$cc\" not found!"
+	exit 1
+fi
+
+if ! which "$strip" > /dev/null 2>&1; then
+	echo "Executable for \"$strip\" not found!"
 	exit 1
 fi
 
 if ! which "$make" > /dev/null 2>&1; then
-	echo "Make executable for \"$make\" not found"!
+	echo "Executable for \"$make\" not found!"
 	exit 1
 fi
 
@@ -52,21 +106,30 @@ fi
 
 unset xlibs suffix rescomp
 xflags="-flto"
-target_name=`$cc -dumpmachine`
+target=`$cc -dumpmachine`
 
-if [ -z "$target_name" ]; then
+if [ -z "$target" ]; then
 	echo "Error: Failed to detect target platform!"
 	exit 1
 fi
 
-case "$target_name" in
+case "$cc" in
+	*gcc*)
+		xflags="-Ofast $xflags"
+		;;
+	*)
+		xflags="-O3 $xflags"
+		;;
+esac
+
+case "$target" in
 	*-w64-mingw32|*-pc-cygwin|*-w64-windows*)
 		suffix=exe
 		rescomp=windres
 		;;
 esac
 
-case "$target_name" in
+case "$target" in
 	x86_64-*|x86-64-*|amd64-*)
 		xflags="$xflags -march=x86-64"
 		;;
@@ -75,9 +138,8 @@ case "$target_name" in
 		;;
 esac
 
-case "$target_name" in
-	*-w64-mingw32)
-		xflags="$xflags -mcrtdll=msvcr120"
+case "$target" in
+	*-w64-mingw32|*-w64-windows*)
 		xlibs="-lbcrypt"
 		;;
 	*-haiku)
@@ -85,8 +147,14 @@ case "$target_name" in
 		;;
 esac
 
-case "$target_name" in
-	*-linux-gnu|*-w64-mingw32|*-cygwin|*-haiku|*-freebsd*|*-openbsd*|*-netbsd*|*-dragonflybsd)
+case "$target" in
+	*-w64-mingw32)
+		xflags="$xflags -mcrtdll=msvcr120"
+		;;
+esac
+
+case "$target" in
+	*-linux-gnu|*-w64-mingw32|*-w64-windows*|*-cygwin|*-haiku|*-freebsd*|*-openbsd*|*-netbsd*|*-dragonflybsd)
 		xflags="$xflags -static"
 		;;
 esac
@@ -97,4 +165,4 @@ esac
 
 set -x
 
-$make CC="$cc" EXTRA_CFLAGS="$xflags" EXTRA_LIBS="$xlibs" SUFFIX="$suffix" RESCOMP="$rescomp"
+$make CC="$cc" STRIP="$strip" RESCOMP="$rescomp" EXTRA_CFLAGS="$xflags" EXTRA_LIBS="$xlibs" SUFFIX="$suffix"

@@ -33,12 +33,21 @@ run_test_case() {
 bin/xxh_rand --version
 printf "Git: %s\n\n" "`git describe --dirty`"
 
-run_test_case 1 95958f9d5db86b9ca9dbb4ed4655b40844e1c4405743b18e0296162d4879b8d67ae5c4f51e62638b2d0167473c962414c0903a4c17a1af1b54c85c4c71743083
-run_test_case 2 29757303dadd627bb757b7feb40994143562eba70cd95ac0d32244fb0bebeb70ab942fe56afde15c7969988bb30539d8a47c156e28dc4f43df9eedf297dff800
+run_test_case 1 c3b859699c69271ac8c28dfeef270b336dfde71b9c9c441b6364a189baa9710b231f950cb5663bdf2f58a9c07ad7a411783082a5e7711b08544fa7333b32210a
+run_test_case 2 397c3f14b786b1256faa16f8805584ccbf879370d57fc1561de43eb623677dfae35017440e71591f99f69a0cdbf9b7d8eab5e4c68ab2fda0a7e048d2b2204c1a
 
-run_test_case 1 59212d699c852a1fc8e5a729114eaab5abc1a4ef3e38c9b814fb34918e6544423d98eca133b0d7e657f74abdfea14858a1f0c406d8fd192d2358b605f527f063 "--hex"
-run_test_case 2 1e95b1ba9870730e548cf4431ff155f619e3ad07c269234f90aef9c465ee9fe4e521f00471d4b34039872aa666daa6438b89e18cfdd2c23239b19a11c96beb5a "--hex"
+run_test_case 1 c8bb566c40b78f82d3cd693d1f3f4dbe0d33b0c5e4c842621a3f3494b910e77193f20c5c947edfeaf68bb80b766398c4d42f7508eb3803af02d9e715140f9f1c "--hex"
+run_test_case 2 1441493d403335481de5dcce203d622a2ab158389809deaae96659a752973476cbd01f9753f60e1af580930ec67e8227b8747dcebbd310cbd0f7f8af3cadfff3 "--hex"
 
-bin/xxh_rand | dieharder -g 200 -a -k 2 -Y 1
+while true; do
+	logfile=`mktemp -t run_tests-XXXXX.log`
+	bin/xxh_rand | dieharder -g 200 -a -k 2 -Y 1 | tee $logfile
+	if grep 'FAILED' < $logfile; then
+		exit 1
+	fi
+	if ! grep 'WEAK' < $logfile; then
+		break
+	fi
+done
 
 echo "All tests completed."

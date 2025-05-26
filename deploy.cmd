@@ -39,6 +39,8 @@ for %%p in (x86 x64 ARM64) do (
 )
 
 echo.
-echo Build successfully completed.
+echo Build completed.
 
-pause
+if not "%NON_INTERACTIVE%" == "1" (
+	pause
+)
